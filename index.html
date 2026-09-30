@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>1st Assessment · Full Syllabus</title>
+<style>
+  :root{
+    --bg:#0b0b0e; --ink:#f2ede3; --dim:#9a948a;
+    --gold:#e6b450; --line:rgba(242,237,227,.12);
+    --deckH:58px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh;overflow-x:hidden}
+  ::selection{background:var(--gold);color:#0b0b0e}
+  .serif{font-family:Georgia,"Times New Roman",serif}
+
+  /* static film treatment only */
+  .vignette{position:fixed;inset:0;z-index:30;pointer-events:none;
+    background:radial-gradient(ellipse at center,transparent 45%,rgba(0,0,0,.5) 100%)}
+
+  /* ---------- bottom control deck ---------- */
+  .deck{position:fixed;left:0;right:0;bottom:0;z-index:50;
+    height:calc(var(--deckH) + env(safe-area-inset-bottom,0px));
+    padding:0 1.1rem env(safe-area-inset-bottom,0px);
+    display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:1.1rem;
+    background:rgba(8,8,10,.92);backdrop-filter:blur(10px);border-top:1px solid var(--line)}
+  .deck-count{font-size:.95rem;color:var(--gold);letter-spacing:.08em;white-space:nowrap;min-width:4.5ch}
+  .seek{position:relative;height:20px;cursor:pointer}
+  .seek::before{content:"";position:absolute;left:0;right:0;top:9px;height:2px;background:var(--line)}
+  .seek-fill{position:absolute;left:0;top:9px;height:2px;width:0;background:var(--gold)}
+  .marker{position:absolute;top:5px;width:10px;height:10px;border-radius:50%;
+    border:1px solid rgba(242,237,227,.35);background:var(--bg);
+    transform:translateX(-50%);cursor:pointer;transition:transform .2s,border-color .2s,background .2s;padding:0}
+  .marker:hover{transform:translateX(-50%) scale(1.6);border-color:var(--gold)}
+  .marker.done{background:var(--gold);border-color:var(--gold)}
+  .dday{position:relative;display:flex;gap:.45rem;align-items:center;font-size:.62rem;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--dim);white-space:nowrap;cursor:pointer}
+  .dday b{color:var(--gold);font-weight:400}
+  .dday input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+  .dday span.ico{font-size:.85rem}
+
+  main{max-width:760px;margin:0 auto}
+
+  /* ---------- fullscreen hero title card ---------- */
+  .hero{min-height:100vh;min-height:100svh;display:grid;place-items:center;
+    text-align:center;padding:8vh 24px calc(var(--deckH) + 6vh)}
+  .kicker{font-size:.72rem;letter-spacing:.42em;color:var(--gold);text-transform:uppercase}
+  h1{font-size:clamp(2.6rem,9vw,5.6rem);line-height:1.02;letter-spacing:.06em;margin:.35em 0 .2em;font-weight:400}
+  h1 .ch{display:inline-block;overflow:hidden;vertical-align:bottom}
+  h1 .ch i{display:inline-block;font-style:normal}
+  .rule{width:120px;height:1px;background:var(--gold);margin:1.3rem auto;transform-origin:center}
+  .sub{color:var(--dim)}
+  .sub strong{color:var(--ink)}
+  .cue{margin-top:5vh;font-size:.62rem;letter-spacing:.4em;text-transform:uppercase;color:var(--dim)}
+
+  .toolbar{display:flex;gap:.5rem;justify-content:center;margin:0 0 4vh}
+  .chip{background:none;border:1px solid var(--line);color:var(--dim);font-size:.62rem;letter-spacing:.22em;
+    text-transform:uppercase;padding:.5em 1.1em;cursor:pointer;border-radius:2px;transition:.25s}
+  .chip:hover{border-color:var(--gold);color:var(--ink)}
+  .chip.active{color:var(--gold);border-color:var(--gold)}
+
+  /* ---------- acts ---------- */
+  .acts{padding:0 24px calc(var(--deckH) + 9vh)}
+  .act{position:relative;margin-bottom:10vh}
+  .watermark{position:absolute;top:-4rem;right:-1rem;z-index:-1;font-family:Georgia,serif;
+    font-size:clamp(9rem,28vw,20rem);line-height:1;color:rgba(242,237,227,.045);
+    pointer-events:none;user-select:none}
+  .subject{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:.4rem}
+  .subject h2{font-size:clamp(1.5rem,4.5vw,2.1rem);font-weight:400;letter-spacing:.08em}
+  .subject h2 em{font-style:normal;color:var(--gold)}
+  .s-tools{display:flex;align-items:center;gap:.5rem}
+  .s-count{font-size:.72rem;letter-spacing:.18em;color:var(--gold)}
+  .mini{background:none;border:1px solid var(--line);color:var(--dim);font-size:.58rem;letter-spacing:.16em;
+    text-transform:uppercase;padding:.4em .7em;cursor:pointer;border-radius:2px;transition:.25s}
+  .mini:hover{color:var(--gold);border-color:var(--gold)}
+  .mini-track{height:2px;background:var(--line);margin-bottom:.6rem}
+  .mini-fill{height:100%;width:0;background:var(--gold);transition:width .5s ease}
+
+  ol.rows{list-style:none;border-top:1px solid var(--line)}
+  .row{position:relative;display:flex;align-items:center;gap:1rem;padding:1.15rem .4rem;
+    border-bottom:1px solid var(--line);transition:background .5s}
+  .row:hover{background:rgba(242,237,227,.03)}
+  .row.flash{background:rgba(230,180,80,.10)}
+  .num{font-family:Georgia,serif;font-size:1.3rem;color:var(--dim);width:2.6rem;text-align:center;transition:color .3s}
+  .check{flex:0 0 auto;width:28px;height:28px;border:1px solid var(--line);background:transparent;
+    border-radius:2px;cursor:pointer;display:grid;place-items:center;transition:.25s}
+  .check svg{width:15px;height:15px;stroke:var(--bg);stroke-width:3;fill:none;opacity:0;transform:scale(.4);
+    transition:.25s cubic-bezier(.34,1.56,.64,1)}
+  .row:hover .check{border-color:var(--gold)}
+  .row.done .check{background:var(--gold);border-color:var(--gold)}
+  .row.done .check svg{opacity:1;transform:scale(1)}
+  .row.done .num{color:var(--gold)}
+  .ch-name{flex:1;background:transparent;border:none;border-bottom:1px solid transparent;color:var(--ink);
+    font:1.02rem Georgia,serif;letter-spacing:.03em;padding:.2em 0;outline:none;min-width:0;transition:border-color .25s}
+  .ch-name:hover,.ch-name:focus{border-bottom-color:var(--line)}
+  .del{background:none;border:none;color:var(--dim);font-size:1rem;cursor:pointer;opacity:0;padding:.2em .4em;transition:.2s;line-height:1}
+  .row:hover .del{opacity:.6}
+  .del:hover{opacity:1!important;color:#e06c5a}
+  .stamp{position:absolute;right:.6rem;top:50%;translate:0 -50%;rotate:-8deg;font-size:.58rem;letter-spacing:.32em;
+    color:var(--gold);border:1px solid var(--gold);padding:.4em .8em .4em 1.1em;text-transform:uppercase;
+    opacity:0;scale:1.5;transition:.25s;pointer-events:none}
+  .row.done .stamp{opacity:1;scale:1}
+  .row.done .ch-name{color:var(--dim);text-decoration:line-through;text-decoration-color:rgba(230,180,80,.5)}
+  .add-row{margin-top:.8rem;text-align:center}
+
+  .outro{text-align:center;padding:0 24px calc(var(--deckH) + 10vh)}
+  .foot-tools{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin-bottom:1rem}
+  .note{font-size:.64rem;color:rgba(154,148,138,.6);letter-spacing:.15em}
+
+  /* ---------- finale & film leader ---------- */
+  .finale{position:fixed;inset:0;z-index:55;display:grid;place-items:center;pointer-events:none;opacity:0}
+  .finale .stamp-big{rotate:-7deg;border:2px solid var(--gold);color:var(--gold);padding:1em 1.6em;
+    font-family:Georgia,serif;font-size:clamp(1rem,3.5vw,1.6rem);letter-spacing:.3em;text-transform:uppercase;
+    background:rgba(11,11,14,.88)}
+
+  .leader{position:fixed;inset:0;z-index:60;background:#050506;display:grid;place-items:center;cursor:pointer}
+  .leader .ring{position:relative;width:min(44vh,44vw,300px);aspect-ratio:1}
+  .leader .ring::before,.leader .ring::after{content:"";position:absolute;background:rgba(242,237,227,.14)}
+  .leader .ring::before{left:-14%;right:-14%;top:50%;height:1px}
+  .leader .ring::after{top:-14%;bottom:-14%;left:50%;width:1px}
+  .leader svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+  .leader .num{position:absolute;inset:0;display:grid;place-items:center;
+    font-family:Georgia,serif;font-size:clamp(3.5rem,12vh,6rem);color:var(--ink)}
+  .leader .skip{position:absolute;bottom:calc(var(--deckH) + 28px);left:50%;translate:-50%;
+    font-size:.6rem;letter-spacing:.34em;text-transform:uppercase;color:var(--dim)}
+
+  .visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  :focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+
+  body.f-todo .row.done{display:none}
+  body.f-done .row:not(.done){display:none}
+
+  @media (max-width:560px){
+    .stamp{display:none}
+    .row.done::after{content:"✓";color:var(--gold);font-weight:700;position:absolute;right:.8rem}
+    .dday span.txt{display:none}
+    .watermark{font-size:9rem;right:-.5rem}
+  }
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto}
+    *{transition-duration:.01ms!important}
+  }
+</style>
+</head>
+<body>
+
+  <div class="vignette"></div>
+
+  <main>
+    <header class="hero">
+      <div>
+        <p class="kicker">1st Assessment · Core Subjects</p>
+        <h1 class="serif" id="title" aria-label="Syllabus">SYLLABUS</h1>
+        <div class="rule"></div>
+        <p class="sub">Four subjects · <strong>18 chapters</strong> · mark them off like scenes in a film 🎬</p>
+        <p class="cue">Scroll to begin</p>
+      </div>
+    </header>
+
+    <div class="toolbar" role="group" aria-label="Filter chapters">
+      <button class="chip active" data-f="all">All</button>
+      <button class="chip" data-f="todo">To do</button>
+      <button class="chip" data-f="done">Done</button>
+    </div>
+
+    <div class="acts" id="acts"></div>
+
+    <footer class="outro">
+      <div class="foot-tools">
+        <button class="mini" id="exportBtn">⬇ Export backup</button>
+        <button class="mini" id="importBtn">⬆ Import backup</button>
+        <button class="mini" id="resetAll">Reset everything</button>
+        <input type="file" id="importFile" accept="application/json" hidden>
+      </div>
+      <p class="note">Saved in this browser (localStorage) · v3</p>
+    </footer>
+  </main>
+
+  <!-- bottom player deck -->
+  <div class="deck">
+    <span class="deck-count serif" id="deckCount">00/18</span>
+    <div class="seek" id="seek" aria-label="Chapter timeline — click a dot to jump">
+      <div class="seek-fill" id="seekFill"></div>
+      <div id="markers"></div>
+    </div>
+    <label class="dday"><span class="ico">📅</span><b id="ddayText">set date</b><input type="date" id="examInput" aria-label="Exam date"></label>
+  </div>
+
+  <p class="visually-hidden" aria-live="polite" id="live"></p>
+  <div class="finale" id="finale" aria-hidden="true">
+    <div class="stamp-big">All 18 done — that's cinema 🎬</div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+  <script>
+  (function(){
+    "use strict";
+    var KEY="syllabus-tracker-v2", KEY_V1="absolute-cinema-syllabus-v1";
+    var SUBJECTS=[
+      {id:"math", name:"Mathematics",      act:"I",   def:[1,2,3,4]},
+      {id:"phy",  name:"Physics",          act:"II",  def:[11,12,13,14]},
+      {id:"chem", name:"Chemistry",        act:"III", def:[2,3,4,5,6,7]},
+      {id:"comp", name:"Computer Science", act:"IV",  def:[1,2,3,4]}
+    ];
+    var REDUCED=matchMedia("(prefers-reduced-motion: reduce)").matches, gsapOK=false;
+    try{ if(typeof gsap!=="undefined"&&typeof ScrollTrigger!=="undefined"){gsap.registerPlugin(ScrollTrigger);gsapOK=true;} }catch(e){}
+
+    /* ---------- state ---------- */
+    function fresh(){
+      var s={chapters:{},done:{},names:{},exam:""};
+      SUBJECTS.forEach(function(sub){ s.chapters[sub.id]=sub.def.slice(); });
+      return s;
+    }
+    function load(){
+      try{
+        var s=JSON.parse(localStorage.getItem(KEY));
+        if(s&&s.chapters){
+          SUBJECTS.forEach(function(sub){
+            if(!Array.isArray(s.chapters[sub.id])||!s.chapters[sub.id].length) s.chapters[sub.id]=sub.def.slice();
+          });
+          s.done=s.done||{}; s.names=s.names||{}; s.exam=s.exam||"";
+          return s;
+        }
+      }catch(e){}
+      return fresh();
+    }
+    function save(){ try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){} }
+    var state=load();
+    try{
+      var old=JSON.parse(localStorage.getItem(KEY_V1));
+      if(old&&Array.isArray(old.chapters)){
+        old.chapters.forEach(function(c,i){ if(c&&c.done) state.done["math:"+(i+1)]=true; });
+        localStorage.removeItem(KEY_V1); save();
+      }
+    }catch(e){}
+
+    function rom(n){var m=[[10,"X"],[9,"IX"],[5,"V"],[4,"IV"],[1,"I"]],s="";m.forEach(function(p){while(n>=p[0]){s+=p[1];n-=p[0];}});return s;}
+    function key(sub,n){return sub+":"+n;}
+    function allChapters(){ /* flat list in play order */
+      var out=[];
+      SUBJECTS.forEach(function(sub){
+        state.chapters[sub.id].forEach(function(n){ out.push({sub:sub.id,n:n}); });
+      });
+      return out;
+    }
+
+    /* ---------- build acts ---------- */
+    var actsEl=document.getElementById("acts"), triggers=[];
+    function buildAll(){
+      if(gsapOK) triggers.forEach(function(t){t.kill();}); triggers=[];
+      actsEl.innerHTML="";
+      SUBJECTS.forEach(function(sub){
+        var sec=document.createElement("section");
+        sec.className="act"; sec.dataset.sub=sub.id;
+        sec.innerHTML='<div class="watermark" aria-hidden="true">'+sub.act+'</div>'+
+          '<div class="subject"><h2 class="serif">Act '+sub.act+' — <em>'+sub.name+'</em></h2>'+
+          '<div class="s-tools"><span class="s-count" data-count>0/'+sub.def.length+'</span>'+
+          '<button class="mini" data-act="add">+ Ch</button>'+
+          '<button class="mini" data-act="reset">Reset</button></div></div>'+
+          '<div class="mini-track"><div class="mini-fill" data-fill></div></div><ol class="rows"></ol>'+
+          '<div class="add-row"><button class="mini" data-act="add">+ Add chapter</button></div>';
+        var rows=sec.querySelector(".rows");
+        state.chapters[sub.id].forEach(function(n){
+          rows.appendChild(makeRow(sub,n));
+        });
+        actsEl.appendChild(sec);
+      });
+      if(gsapOK&&!REDUCED){
+        gsap.utils.toArray(".act").forEach(function(el){
+          triggers.push(gsap.from(el,{autoAlpha:0,y:36,duration:.8,ease:"power3.out",
+            scrollTrigger:{trigger:el,start:"top 85%"}}));
+          var wm=el.querySelector(".watermark");
+          triggers.push(gsap.from(wm,{autoAlpha:0,scale:.9,duration:1.2,ease:"power2.out",
+            scrollTrigger:{trigger:el,start:"top 75%"}}));
+        });
+      }
+      buildMarkers(); refresh(); layoutRefresh();
+    }
+    function makeRow(sub,n){
+      var li=document.createElement("li");
+      li.className="row"; li.dataset.sub=sub.id; li.dataset.ch=n;
+      var isDone=!!state.done[key(sub.id,n)];
+      if(isDone) li.classList.add("done");
+      li.innerHTML=
+        '<button class="check" role="checkbox" aria-checked="'+isDone+'" aria-label="Mark '+sub.name+' chapter '+n+' complete">'+
+        '<svg viewBox="0 0 24 24"><path d="M4 12.5l5 5L20 6.5"/></svg></button>'+
+        '<span class="num serif">'+rom(n)+'</span>'+
+        '<input class="ch-name" maxlength="60" aria-label="'+sub.name+' chapter '+n+' name" value="'+
+        (state.names[key(sub.id,n)]||("Chapter "+n)).replace(/"/g,"&quot;")+'">'+
+        '<button class="del" aria-label="Remove chapter '+n+'">×</button>'+
+        '<span class="stamp">Done</span>';
+      return li;
+    }
+
+    /* ---------- seekbar markers ---------- */
+    var markersEl=document.getElementById("markers");
+    function buildMarkers(){
+      markersEl.innerHTML="";
+      var chs=allChapters();
+      chs.forEach(function(c,i){
+        var b=document.createElement("button");
+        b.className="marker"+(state.done[key(c.sub,c.n)]?" done":"");
+        b.style.left=((i+.5)/chs.length*100)+"%";
+        b.dataset.sub=c.sub; b.dataset.ch=c.n;
+        b.setAttribute("aria-label","Jump to "+c.sub+" chapter "+c.n);
+        markersEl.appendChild(b);
+      });
+    }
+    document.getElementById("seek").addEventListener("click",function(e){
+      var m=e.target.closest(".marker"); if(!m) return;
+      setFilter("all");
+      var row=actsEl.querySelector('.row[data-sub="'+m.dataset.sub+'"][data-ch="'+m.dataset.ch+'"]');
+      if(!row) return;
+      row.scrollIntoView({behavior:REDUCED?"auto":"smooth",block:"center"});
+      row.classList.add("flash");
+      setTimeout(function(){row.classList.remove("flash");},1400);
+    });
+
+    /* ---------- interactions ---------- */
+    actsEl.addEventListener("click",function(e){
+      var chk=e.target.closest(".check"), del=e.target.closest(".del"), mini=e.target.closest(".mini");
+      if(chk){
+        var row=chk.closest(".row"), k=key(row.dataset.sub,row.dataset.ch);
+        state.done[k]=!state.done[k];
+        row.classList.toggle("done",state.done[k]);
+        chk.setAttribute("aria-checked",String(!!state.done[k]));
+        if(state.done[k]&&gsapOK&&!REDUCED)
+          gsap.fromTo(row.querySelector(".num"),{scale:1.35},{scale:1,duration:.5,ease:"back.out(3)"});
+        save(); refresh();
+      }
+      else if(del){
+        var r=del.closest(".row"), sub=r.dataset.sub, n=+r.dataset.ch, k2=key(sub,n);
+        state.chapters[sub]=state.chapters[sub].filter(function(x){return x!==n;});
+        delete state.done[k2]; delete state.names[k2];
+        save(); buildAll();
+      }
+      else if(mini){
+        var sec=mini.closest(".act"), s2=sec.dataset.sub;
+        if(mini.dataset.act==="add"){
+          var max=Math.max.apply(null,state.chapters[s2].concat([0]));
+          state.chapters[s2].push(max+1); save(); buildAll();
+          var last=actsEl.querySelector('[data-sub="'+s2+'"] .row:last-child .ch-name');
+          if(last){ last.focus(); last.select(); }
+        }else{
+          if(!confirm("Reset "+s2.toUpperCase()+" progress?")) return;
+          var def=SUBJECTS.find(function(x){return x.id===s2;}).def;
+          state.chapters[s2]=def.slice();
+          Object.keys(state.done).forEach(function(k){ if(k.split(":")[0]===s2) delete state.done[k]; });
+          Object.keys(state.names).forEach(function(k){ if(k.split(":")[0]===s2) delete state.names[k]; });
+          save(); buildAll();
+        }
+      }
+    });
+    actsEl.addEventListener("input",function(e){
+      var inp=e.target.closest(".ch-name"); if(!inp) return;
+      var row=inp.closest(".row");
+      state.names[key(row.dataset.sub,row.dataset.ch)]=inp.value;
+      save();
+    });
+
+    /* ---------- filters ---------- */
+    var current="all";
+    function setFilter(f){
+      current=f;
+      document.querySelectorAll(".chip").forEach(function(c){c.classList.toggle("active",c.dataset.f===f);});
+      document.body.classList.toggle("f-todo",f==="todo");
+      document.body.classList.toggle("f-done",f==="done");
+      refresh(); layoutRefresh();
+    }
+    document.querySelectorAll(".chip").forEach(function(chip){
+      chip.addEventListener("click",function(){ setFilter(chip.dataset.f); });
+    });
+
+    /* ---------- progress / countdown ---------- */
+    var deckCount=document.getElementById("deckCount"),seekFill=document.getElementById("seekFill"),
+        live=document.getElementById("live"),finale=document.getElementById("finale"),
+        ddayText=document.getElementById("ddayText"),examInput=document.getElementById("examInput");
+
+    function layoutRefresh(){ if(gsapOK) ScrollTrigger.refresh(); }
+
+    function refresh(){
+      var total=0, done=0, chs=allChapters();
+      SUBJECTS.forEach(function(sub){
+        var list=state.chapters[sub.id];
+        var d=list.filter(function(n){return state.done[key(sub.id,n)];}).length;
+        total+=list.length; done+=d;
+        var sec=actsEl.querySelector('[data-sub="'+sub.id+'"]'); if(!sec) return;
+        sec.querySelector("[data-count]").textContent=d+"/"+list.length;
+        var fill=sec.querySelector("[data-fill]");
+        var pct=(list.length?d/list.length*100:0)+"%";
+        if(gsapOK&&!REDUCED) gsap.to(fill,{width:pct,duration:.6,ease:"power3.out"}); else fill.style.width=pct;
+      });
+      var opct=(total?done/total*100:0)+"%";
+      if(gsapOK&&!REDUCED) gsap.to(seekFill,{width:opct,duration:.6,ease:"power3.out"}); else seekFill.style.width=opct;
+      deckCount.textContent=("0"+done).slice(-2)+"/"+("0"+total).slice(-2);
+      live.textContent=done+" of "+total+" chapters complete";
+      /* marker states */
+      chs.forEach(function(c,i){
+        var m=markersEl.children[i];
+        if(m) m.classList.toggle("done",!!state.done[key(c.sub,c.n)]);
+      });
+      var allDone=total>0&&done===total;
+      if(allDone&&gsapOK&&!REDUCED){
+        gsap.fromTo(finale,{opacity:0},{opacity:1,duration:.4});
+        gsap.fromTo(finale.querySelector(".stamp-big"),{scale:2.2,rotate:-20},{scale:1,rotate:-7,duration:.6,ease:"power4.out"});
+      }else finale.style.opacity=allDone?1:0;
+    }
+
+    examInput.value=state.exam||"";
+    function refreshExam(){
+      state.exam=examInput.value; save();
+      if(!state.exam){ ddayText.textContent="set date"; return; }
+      var days=Math.ceil((new Date(state.exam+"T00:00:00")-new Date(new Date().toDateString()))/864e5);
+      ddayText.textContent=days>1?"D−"+days:days===1?"tomorrow":days===0?"TODAY":Math.abs(days)+"d ago";
+    }
+    examInput.addEventListener("change",refreshExam);
+
+    /* ---------- backup ---------- */
+    document.getElementById("exportBtn").addEventListener("click",function(){
+      var blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+      var a=document.createElement("a");
+      a.href=URL.createObjectURL(blob); a.download="syllabus-backup.json"; a.click();
+      URL.revokeObjectURL(a.href);
+    });
+    document.getElementById("importBtn").addEventListener("click",function(){document.getElementById("importFile").click();});
+    document.getElementById("importFile").addEventListener("change",function(e){
+      var f=e.target.files[0]; if(!f) return;
+      var rd=new FileReader();
+      rd.onload=function(){
+        try{
+          var s=JSON.parse(rd.result);
+          if(!s.chapters) throw 0;
+          state=load(); state.chapters=s.chapters; state.done=s.done||{}; state.names=s.names||{}; state.exam=s.exam||"";
+          examInput.value=state.exam; save(); buildAll(); refreshExam();
+        }catch(err){ alert("Invalid backup file."); }
+      };
+      rd.readAsText(f); e.target.value="";
+    });
+    document.getElementById("resetAll").addEventListener("click",function(){
+      if(!confirm("Reset ALL progress, edits and chapters?")) return;
+      state=fresh(); save(); examInput.value=""; buildAll(); refreshExam();
+    });
+
+    /* ---------- hero timeline ---------- */
+    if(gsapOK&&!REDUCED){
+      var h1=document.getElementById("title"),txt=h1.textContent.trim();h1.textContent="";
+      txt.split("").forEach(function(c){
+        var w=document.createElement("span");w.className="ch";
+        var i=document.createElement("i");i.textContent=c;w.appendChild(i);h1.appendChild(w);
+      });
+      gsap.timeline({defaults:{ease:"power3.out"}})
+        .from(".kicker",{autoAlpha:0,y:14,duration:.6})
+        .from("#title .ch i",{yPercent:115,duration:.9,stagger:.055,ease:"power4.out"},"-=.25")
+        .from(".rule",{scaleX:0,duration:.8,ease:"power2.inOut"},"-=.5")
+        .from(".sub,.cue",{autoAlpha:0,y:16,stagger:.12,duration:.6},"-=.5");
+    }
+
+    /* ---------- film-leader countdown (skippable, once per session) ---------- */
+    function playLeader(){
+      var seen=false;
+      try{ seen=!!sessionStorage.getItem("leader-seen"); }catch(e){}
+      if(!gsapOK||REDUCED||seen) return;
+      var ov=document.createElement("div");
+      ov.className="leader"; ov.setAttribute("aria-hidden","true");
+      ov.innerHTML='<div class="ring">'+
+        '<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="none" stroke="rgba(242,237,227,.14)" stroke-width="1.5"/>'+
+        '<circle class="sweep" cx="50" cy="50" r="48" fill="none" stroke="var(--gold)" stroke-width="1.5" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/></svg>'+
+        '<div class="num">3</div></div><div class="skip">Click anywhere to skip</div>';
+      document.body.appendChild(ov);
+      document.documentElement.style.overflow="hidden";
+      var finished=false, num=ov.querySelector(".num"), sweep=ov.querySelector(".sweep");
+      function finish(){
+        if(finished) return; finished=true;
+        document.documentElement.style.overflow="";
+        try{ sessionStorage.setItem("leader-seen","1"); }catch(e){}
+        gsap.to(ov,{autoAlpha:0,duration:.45,onComplete:function(){ov.remove();}});
+      }
+      ov.addEventListener("click",finish);
+      addEventListener("keydown",function h(){finish();removeEventListener("keydown",h);});
+      var tl=gsap.timeline({onComplete:finish});
+      [3,2,1].forEach(function(n){
+        tl.call(function(){num.textContent=n;})
+          .fromTo(num,{scale:1.7,autoAlpha:0},{scale:1,autoAlpha:1,duration:.3,ease:"power2.out"},"<")
+          .to(sweep,{strokeDashoffset:0,duration:1,ease:"none"},"<");
+      });
+      setTimeout(finish,4300); /* safety net */
+    }
+
+    buildAll(); refreshExam(); playLeader();
+  })();
+  </script>
+</body>
+</html>
