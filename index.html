@@ -16,7 +16,6 @@
   ::selection{background:var(--gold);color:#0b0b0e}
   .serif{font-family:Georgia,"Times New Roman",serif}
 
-  /* static film treatment only */
   .vignette{position:fixed;inset:0;z-index:30;pointer-events:none;
     background:radial-gradient(ellipse at center,transparent 45%,rgba(0,0,0,.5) 100%)}
 
@@ -35,11 +34,12 @@
     transform:translateX(-50%);cursor:pointer;transition:transform .2s,border-color .2s,background .2s;padding:0}
   .marker:hover{transform:translateX(-50%) scale(1.6);border-color:var(--gold)}
   .marker.done{background:var(--gold);border-color:var(--gold)}
-  .dday{position:relative;display:flex;gap:.45rem;align-items:center;font-size:.62rem;
+  .dday{display:flex;gap:.45rem;align-items:center;font-size:.62rem;
     letter-spacing:.16em;text-transform:uppercase;color:var(--dim);white-space:nowrap;cursor:pointer}
   .dday b{color:var(--gold);font-weight:400}
-  .dday input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
-  .dday span.ico{font-size:.85rem}
+  .dday input{background:transparent;border:1px solid var(--line);color:var(--ink);
+    border-radius:2px;padding:.3em .45em;font:inherit;font-size:.68rem;color-scheme:dark;cursor:pointer}
+  .dday input::-webkit-calendar-picker-indicator{filter:invert(70%) sepia(40%) saturate(500%) hue-rotate(350deg);cursor:pointer}
 
   main{max-width:760px;margin:0 auto}
 
@@ -121,8 +121,10 @@
   .leader .ring::before{left:-14%;right:-14%;top:50%;height:1px}
   .leader .ring::after{top:-14%;bottom:-14%;left:50%;width:1px}
   .leader svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg)}
+  /* lining figures: Georgia's old-style digits (3 dips below baseline) looked off-center */
   .leader .num{position:absolute;inset:0;display:grid;place-items:center;
-    font-family:Georgia,serif;font-size:clamp(3.5rem,12vh,6rem);color:var(--ink)}
+    font-family:"Times New Roman",Georgia,serif;font-variant-numeric:lining-nums;line-height:1;
+    font-size:clamp(3.5rem,12vh,6rem);color:var(--ink)}
   .leader .skip{position:absolute;bottom:calc(var(--deckH) + 28px);left:50%;translate:-50%;
     font-size:.6rem;letter-spacing:.34em;text-transform:uppercase;color:var(--dim)}
 
@@ -135,7 +137,7 @@
   @media (max-width:560px){
     .stamp{display:none}
     .row.done::after{content:"✓";color:var(--gold);font-weight:700;position:absolute;right:.8rem}
-    .dday span.txt{display:none}
+    .dday span.ico{display:none}
     .watermark{font-size:9rem;right:-.5rem}
   }
   @media (prefers-reduced-motion:reduce){
@@ -174,7 +176,7 @@
         <button class="mini" id="resetAll">Reset everything</button>
         <input type="file" id="importFile" accept="application/json" hidden>
       </div>
-      <p class="note">Saved in this browser (localStorage) · v3</p>
+      <p class="note">Saved in this browser (localStorage) · v3.1</p>
     </footer>
   </main>
 
@@ -185,7 +187,10 @@
       <div class="seek-fill" id="seekFill"></div>
       <div id="markers"></div>
     </div>
-    <label class="dday"><span class="ico">📅</span><b id="ddayText">set date</b><input type="date" id="examInput" aria-label="Exam date"></label>
+    <label class="dday" id="ddayChip" title="Exam date">
+      <span class="ico">📅</span><b id="ddayText">set date</b>
+      <input type="date" id="examInput" aria-label="Exam date">
+    </label>
   </div>
 
   <p class="visually-hidden" aria-live="polite" id="live"></p>
@@ -239,7 +244,7 @@
 
     function rom(n){var m=[[10,"X"],[9,"IX"],[5,"V"],[4,"IV"],[1,"I"]],s="";m.forEach(function(p){while(n>=p[0]){s+=p[1];n-=p[0];}});return s;}
     function key(sub,n){return sub+":"+n;}
-    function allChapters(){ /* flat list in play order */
+    function allChapters(){
       var out=[];
       SUBJECTS.forEach(function(sub){
         state.chapters[sub.id].forEach(function(n){ out.push({sub:sub.id,n:n}); });
@@ -263,18 +268,15 @@
           '<div class="mini-track"><div class="mini-fill" data-fill></div></div><ol class="rows"></ol>'+
           '<div class="add-row"><button class="mini" data-act="add">+ Add chapter</button></div>';
         var rows=sec.querySelector(".rows");
-        state.chapters[sub.id].forEach(function(n){
-          rows.appendChild(makeRow(sub,n));
-        });
+        state.chapters[sub.id].forEach(function(n){ rows.appendChild(makeRow(sub,n)); });
         actsEl.appendChild(sec);
       });
       if(gsapOK&&!REDUCED){
         gsap.utils.toArray(".act").forEach(function(el){
           triggers.push(gsap.from(el,{autoAlpha:0,y:36,duration:.8,ease:"power3.out",
             scrollTrigger:{trigger:el,start:"top 85%"}}));
-          var wm=el.querySelector(".watermark");
-          triggers.push(gsap.from(wm,{autoAlpha:0,scale:.9,duration:1.2,ease:"power2.out",
-            scrollTrigger:{trigger:el,start:"top 75%"}}));
+          triggers.push(gsap.from(el.querySelector(".watermark"),{autoAlpha:0,scale:.9,duration:1.2,
+            ease:"power2.out",scrollTrigger:{trigger:el,start:"top 75%"}}));
         });
       }
       buildMarkers(); refresh(); layoutRefresh();
@@ -374,13 +376,10 @@
       chip.addEventListener("click",function(){ setFilter(chip.dataset.f); });
     });
 
-    /* ---------- progress / countdown ---------- */
+    /* ---------- progress ---------- */
     var deckCount=document.getElementById("deckCount"),seekFill=document.getElementById("seekFill"),
-        live=document.getElementById("live"),finale=document.getElementById("finale"),
-        ddayText=document.getElementById("ddayText"),examInput=document.getElementById("examInput");
-
+        live=document.getElementById("live"),finale=document.getElementById("finale");
     function layoutRefresh(){ if(gsapOK) ScrollTrigger.refresh(); }
-
     function refresh(){
       var total=0, done=0, chs=allChapters();
       SUBJECTS.forEach(function(sub){
@@ -397,7 +396,6 @@
       if(gsapOK&&!REDUCED) gsap.to(seekFill,{width:opct,duration:.6,ease:"power3.out"}); else seekFill.style.width=opct;
       deckCount.textContent=("0"+done).slice(-2)+"/"+("0"+total).slice(-2);
       live.textContent=done+" of "+total+" chapters complete";
-      /* marker states */
       chs.forEach(function(c,i){
         var m=markersEl.children[i];
         if(m) m.classList.toggle("done",!!state.done[key(c.sub,c.n)]);
@@ -409,14 +407,29 @@
       }else finale.style.opacity=allDone?1:0;
     }
 
+    /* ---------- exam countdown (visible input, UTC-safe) ---------- */
+    var examInput=document.getElementById("examInput"),
+        ddayText=document.getElementById("ddayText"),
+        ddayChip=document.getElementById("ddayChip");
     examInput.value=state.exam||"";
+    function daysUntil(iso){
+      var p=iso.split("-").map(Number);
+      if(p.length!==3||!p[0]) return null;
+      var t=new Date(), today=Date.UTC(t.getFullYear(),t.getMonth(),t.getDate());
+      return Math.round((Date.UTC(p[0],p[1]-1,p[2])-today)/864e5);
+    }
     function refreshExam(){
       state.exam=examInput.value; save();
-      if(!state.exam){ ddayText.textContent="set date"; return; }
-      var days=Math.ceil((new Date(state.exam+"T00:00:00")-new Date(new Date().toDateString()))/864e5);
-      ddayText.textContent=days>1?"D−"+days:days===1?"tomorrow":days===0?"TODAY":Math.abs(days)+"d ago";
+      var d=state.exam?daysUntil(state.exam):null;
+      if(d===null){ ddayText.textContent="set date"; return; }
+      ddayText.textContent=d>1?"D−"+d:d===1?"tomorrow":d===0?"TODAY":Math.abs(d)+"d ago";
+      ddayText.style.color=(d>=0&&d<=3)?"var(--gold)":"var(--dim)";
     }
+    examInput.addEventListener("input",refreshExam);
     examInput.addEventListener("change",refreshExam);
+    ddayChip.addEventListener("click",function(){
+      try{ examInput.showPicker(); }catch(e){ examInput.focus(); }
+    });
 
     /* ---------- backup ---------- */
     document.getElementById("exportBtn").addEventListener("click",function(){
@@ -480,13 +493,13 @@
       }
       ov.addEventListener("click",finish);
       addEventListener("keydown",function h(){finish();removeEventListener("keydown",h);});
-      var tl=gsap.timeline({onComplete:finish});
-      [3,2,1].forEach(function(n){
-        tl.call(function(){num.textContent=n;})
-          .fromTo(num,{scale:1.7,autoAlpha:0},{scale:1,autoAlpha:1,duration:.3,ease:"power2.out"},"<")
-          .to(sweep,{strokeDashoffset:0,duration:1,ease:"none"},"<");
+      var tl=gsap.timeline({onComplete:finish,delay:.25});
+      [3,2,1].forEach(function(n,i){
+        tl.call(function(){num.textContent=n;},null,i*1.05)
+          .fromTo(num,{scale:1.7,autoAlpha:0},{scale:1,autoAlpha:1,duration:.35,ease:"power2.out"},i*1.05)
+          .fromTo(sweep,{strokeDashoffset:100},{strokeDashoffset:0,duration:1,ease:"none"},i*1.05);
       });
-      setTimeout(finish,4300); /* safety net */
+      setTimeout(finish,5000);
     }
 
     buildAll(); refreshExam(); playLeader();
